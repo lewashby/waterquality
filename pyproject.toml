@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "waterquality"
+version = "0.1.0"
+description = ""
+authors = ["Luis Angel Rodriguez Reiners <luis.reiners@unical.it>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+waterquality = "waterquality.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+typer = "^0.12.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
