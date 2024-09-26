@@ -3,7 +3,7 @@ import numpy as np
 import re
 import csv
 from sklearn.preprocessing import MinMaxScaler
-from Utils import series_to_supervised
+from .Utils import series_to_supervised
 
 class DataLoader:
 

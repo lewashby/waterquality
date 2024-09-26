@@ -1,13 +1,18 @@
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 import keras_tuner as kt
 from sklearn.metrics import mean_squared_error
-from DataHandler import Reader, DataPreparation
-from Model import Model
-from Utils import plot_single_prediction, plot_prediction_sequence
-from ModelBuilder import RNNHyperModel
+
+from .DataHandler import Reader, DataPreparation
+from .Model import Model
+from .Utils import plot_single_prediction, plot_prediction_sequence
+from .ModelBuilder import RNNHyperModel
 
 class Pipeline:
 
