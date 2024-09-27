@@ -1,19 +1,22 @@
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, LSTM, Input, Dropout
 from numpy import expand_dims, zeros, concatenate, array
 
 class Model:
 
-    def __init__(self, input_shape, output=1, loss='mean_squared_error', optimizer='adam', metrics=None):
-        model = Sequential()
-        model.add(Input(shape=(input_shape[0], input_shape[1])))
-        model.add(LSTM(128, return_sequences=True, dropout=0.2))
-        model.add(LSTM(64, return_sequences=True, dropout=0.2))
-        model.add(LSTM(32))
-        model.add(Dense(10))
-        model.add(Dense(output))
-        model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
-        self.model = model
+    def __init__(self, input_shape=(1,1), output=1, loss='mean_squared_error', optimizer='adam', metrics=None, path=None):
+        if path is None:
+            model = Sequential()
+            model.add(Input(shape=(input_shape[0], input_shape[1])))
+            model.add(LSTM(128, return_sequences=True, dropout=0.2))
+            model.add(LSTM(64, return_sequences=True, dropout=0.2))
+            model.add(LSTM(32))
+            model.add(Dense(10))
+            model.add(Dense(output))
+            model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
+            self.model = model
+        else:
+            self.model = load_model(path)
 
     def fit(self, train_X, train_Y, validation_data, epochs=20, batch_size=72, verbose=0, shuffle=False):
         history = self.model.fit(
@@ -45,11 +48,9 @@ class Model:
 
     def save_model(self, path):
         self.model.save(path)
-    
 
     @staticmethod
     def build_a_model(hp):
-        print(hp)
         model = Sequential()
         model.add(LSTM(hp.Int('input_unit',min_value=32,max_value=128,step=32),return_sequences=True, input_shape=(24,11)))
         for i in range(hp.Int('n_layers', 1, 5)):

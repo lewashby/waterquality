@@ -10,8 +10,9 @@ class RNNHyperModel(HyperModel):
 
     def build(self, hp):
         model = Sequential()
-        model.add(LSTM(hp.Int('input_unit',min_value=32,max_value=128,step=32),return_sequences=True, input_shape=self.input_shape))
-        for i in range(hp.Int('n_layers', 1, 5)):
+        model.add(Input(shape=self.input_shape))
+        model.add(LSTM(hp.Int('input_unit',min_value=32,max_value=128,step=32),return_sequences=True))
+        for i in range(hp.Int('n_layers', 1, 3)):
             model.add(LSTM(hp.Int(f'lstm_{i}_units',min_value=32,max_value=128,step=32),return_sequences=True))
         model.add(LSTM(hp.Int(f'lstm_{6}_units',min_value=32,max_value=128,step=32),return_sequences=False))
         model.add(Dropout(hp.Float('Dropout_rate',min_value=0,max_value=0.5,step=0.1)))

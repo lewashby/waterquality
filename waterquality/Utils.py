@@ -40,16 +40,18 @@ def boxplot(data, columns, elements_by_row=3, height=1000, width=700):
     fig.update_layout(height=height, width=width, title_text="BoxPlots")
     fig.show()
 
-def plot_predictions(y, yhat):
+def plot_predictions(y, yhat, save_path=None):
     if y.shape[1] == 1:
         plt.plot(yhat, label='predictions')
         plt.plot(y, label='real values')
         plt.legend()
+        if save_path is not None: 
+            plt.savefig(save_path, bbox_inches='tight')
         plt.show()
     else:
         print("Plotting sequence prediction for the whole dataset is not available")
 
-def plot_single_prediction(yhat, history=None, y=None):
+def plot_single_prediction(yhat, history=None, y=None, save_path=None):
     if history is not None:
         timesteps_in = history.shape[0]
         plt.plot(range(timesteps_in), history, color='blue', label='past values')
@@ -57,17 +59,20 @@ def plot_single_prediction(yhat, history=None, y=None):
     if y is not None:
         plt.plot(timesteps_in+1, y, label='real value', markersize=10, marker=".", color="green", alpha=0.5)
     plt.legend()
+    if save_path is not None: 
+        plt.savefig(save_path, bbox_inches='tight')
     plt.show()
 
-def plot_prediction_sequence(yhat, history=None, y=None):
+def plot_prediction_sequence(yhat, history=None, y=None, save_path=None):
     timesteps_in = history.shape[0]
     timesteps_out = yhat.shape[0]
     if history is not None:
         plt.plot(range(timesteps_in), history, color='blue', label='past values')
     plt.plot(range(timesteps_in, timesteps_in+timesteps_out), yhat, color='red', label='predictions')
     if y is not None:
-        print(y.shape)
         plt.plot(range(timesteps_in, timesteps_in+timesteps_out), y, color='orange', label='real future values')
     plt.legend()
+    if save_path is not None: 
+        plt.savefig(save_path, bbox_inches='tight')
     plt.show()
     

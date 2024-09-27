@@ -1,14 +1,14 @@
 import pandas as pd
 import numpy as np
 import math
+import random
 import matplotlib.pyplot as plt
 import keras_tuner as kt
 from sklearn.metrics import mean_squared_error
-from tensorflow.keras.models import load_model
 
 from .DataHandler import Reader, DataPreparation
 from .Model import Model
-from .Utils import plot_single_prediction, plot_prediction_sequence
+from .Utils import plot_single_prediction, plot_prediction_sequence, plot_predictions
 from .ModelBuilder import RNNHyperModel
 
 class Pipeline:
@@ -138,7 +138,7 @@ class Pipeline:
             plt.legend()
             plt.show()
 
-    def evaluate_model(self, plot=False):
+    def evaluate_model(self, plot=False, save_plot_path=None):
         yhat = self.model.predict(self.test_X)
         yhat = DataPreparation.inverse_transform_y(yhat, self.test_X.shape[2])
         real_y = DataPreparation.inverse_transform_y(self.test_y, self.test_X.shape[2])
@@ -146,21 +146,15 @@ class Pipeline:
         rmse = math.sqrt(mean_squared_error(real_y, yhat))
         print('Test RMSE: %.3f' % rmse)
         if plot:
-            if yhat.shape[1] == 1:
-                plt.plot(real_y, label='real values')
-                plt.plot(yhat, label='predictions')
-                plt.legend()
-                plt.show()
-            else:
-                print("Plotting sequence prediction for the whole dataset is not available")
+            plot_predictions(real_y, yhat, save_plot_path)
 
-    def save_model(self, path):
-        self.model.save_model(path)
+    def save_model(self, model, path):
+        model.save(path)
 
     def load_trained_model(self, path):
-        self.model = load_model(path)
+        self.model = Model(path=path)
 
-    def predict_single_value(self, X, y=None, plot=True):        
+    def predict_single_value(self, X, y=None, plot=False, save_plot_path=None):
         #given past values predict next target column value
         #plot if required
         X_values = DataPreparation.transform_x(X)
@@ -168,29 +162,51 @@ class Pipeline:
         yhat = DataPreparation.inverse_transform_y(yhat, X_values.shape[1])
         yhat = yhat[0]
 
+        if y is not None:
+            real_Y = y[:,0]
+            rmse = math.sqrt(mean_squared_error(real_Y, yhat))
+            print('RMSE: %.3f' % rmse)
+
         if plot==True:
             past_Y = X[:,0]
-            plot_single_prediction(yhat, past_Y, y)
+            real_Y = y[:,0]
+            plot_single_prediction(yhat, past_Y, real_Y, save_plot_path)
         return yhat
 
-    def predict_sequence_values(self, X, y=None, plot=True):
+    def predict_sequence_values(self, X, y=None, plot=False, save_plot_path=None):
         #given past values predict target column nexts sequence of n values
         #plot if required
         X_values = DataPreparation.transform_x(X)
-        # print(X_values.shape)
         yhat = self.model.predict(X_values)
         yhat = DataPreparation.inverse_transform_y(yhat, X_values.shape[1])
         yhat = yhat[0,:]
 
+        if y is not None:
+            real_Y = y[:,0]
+            rmse = math.sqrt(mean_squared_error(real_Y, yhat))
+            print('RMSE: %.3f' % rmse)
+
         if plot==True:
             past_Y = X[:,0]
             real_Y = y[:,0] if y is not None else None
-            plot_prediction_sequence(yhat, past_Y, real_Y)
+            plot_prediction_sequence(yhat, past_Y, real_Y, save_plot_path)
         return yhat
 
-    def hyperparameter_tunning(self, epochs=20, max_trials=5, executions_per_trial=3):            
+    def pick_random_sample(self):
+        timesteps_in = self.model.model.input_shape[1]
+        timesteps_out = self.model.model.output_shape[1]
+
+        max_value = len(self.merged_data) -timesteps_in + timesteps_out
+        min_value = len(self.merged_data)//3*2
+        random_index = random.randint(min_value, max_value)
+        random_sample = self.merged_data.iloc[random_index:random_index+timesteps_in].values
+        random_sample_real_output = self.merged_data.iloc[random_index+timesteps_in:random_index+timesteps_in+timesteps_out].values
+
+        return random_sample, random_sample_real_output
+
+
+    def hyperparameter_tuning(self, epochs=20, batch_size=72, max_trials=5, executions_per_trial=3):            
         tuner = kt.RandomSearch(
-            # self.model.build_a_model,
             hypermodel = RNNHyperModel((self.train_X.shape[1], self.train_X.shape[2]), self.train_y.shape[1]),
             objective='mse',
             max_trials=max_trials,
@@ -200,7 +216,7 @@ class Pipeline:
             x=self.train_X,
             y=self.train_y,
             epochs=epochs,
-            batch_size=128,
+            batch_size=batch_size,
             validation_data=(self.validation_X, self.validation_y),
         )
         models = tuner.get_best_models(num_models=1)
