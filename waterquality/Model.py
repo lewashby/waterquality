@@ -42,6 +42,9 @@ class Model:
         
         predictions = self.model.predict(instance_x)
         return predictions
+
+    def save_model(self, path):
+        self.model.save(path)
     
 
     @staticmethod

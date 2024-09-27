@@ -1,13 +1,10 @@
-import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 import keras_tuner as kt
 from sklearn.metrics import mean_squared_error
+from tensorflow.keras.models import load_model
 
 from .DataHandler import Reader, DataPreparation
 from .Model import Model
@@ -126,11 +123,12 @@ class Pipeline:
         input_shape = (self.train_X.shape[1], self.train_X.shape[2])
         self.model = Model(input_shape, output=output)
 
-    def train_model(self, verbose=1, plot=False):
+    def train_model(self, epochs, verbose=1, plot=False):
         half_test = len(self.test_y) // 2
         self.history = self.model.fit(
             self.train_X,
             self.train_y,
+            epochs=epochs,
             validation_data=(self.validation_X, self.validation_y),
             verbose=verbose
         )
@@ -155,6 +153,12 @@ class Pipeline:
                 plt.show()
             else:
                 print("Plotting sequence prediction for the whole dataset is not available")
+
+    def save_model(self, path):
+        self.model.save_model(path)
+
+    def load_trained_model(self, path):
+        self.model = load_model(path)
 
     def predict_single_value(self, X, y=None, plot=True):        
         #given past values predict next target column value
