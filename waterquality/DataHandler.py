@@ -93,7 +93,7 @@ class Reader:
         values = values.split(';')
         if values[0] == 'Date (MM/DD/YYYY)' and header == None:
           header = [x for x in values if x != '']
-        elif re.match("\d{1,2}\/\d{1,2}\/\d{2,4}", values[0]):
+        elif re.match(r"\d{1,2}\/\d{1,2}\/\d{2,4}", values[0]):
           measures.append([x.replace(',', '.') for x in values if x != ''])
         elif len(measures) > 0:
           df = pd.DataFrame(data=measures, columns=header)
