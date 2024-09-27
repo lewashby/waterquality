@@ -28,7 +28,7 @@ def pipeline(
     timesteps_in: Annotated[int, typer.Argument()], 
     timesteps_out: Annotated[int, typer.Argument()],
     training_epochs: Annotated[int, typer.Argument()] = 10,
-    save_model_path: Annotated[str, typer.Argument()] = "model.keras"
+    model_name: Annotated[str, typer.Argument()] = "model.keras"
     ):
     """
     Load data files, clean and merge data sources, and finally create a model
@@ -52,8 +52,8 @@ def pipeline(
     print_log(f"Model trained...")
     print_log(f"Evaluating model...")
     pipeline.evaluate_model()
-    pipeline.save_model(pipeline.model.model, f"{base_models_path}/{save_model_path}")
-    print_log(f'Model saved at "{base_models_path}/{save_model_path}"')
+    pipeline.save_model(pipeline.model.model, f"{base_models_path}/{model_name}")
+    print_log(f'Model saved at "{base_models_path}/{model_name}"')
 
 
 @app.command()
@@ -93,7 +93,7 @@ def hyperparameter_tuning(
     timesteps_in: Annotated[int, typer.Argument()],
     timesteps_out: Annotated[int, typer.Argument()],
     training_epochs: Annotated[int, typer.Argument()] = 10,
-    save_model_path: Annotated[str, typer.Argument()] = "tuned-model.keras",
+    model_name: Annotated[str, typer.Argument()] = "tuned-model.keras",
     batch_size: Annotated[int, typer.Argument()] = 72,
     max_trials: Annotated[int, typer.Argument()] = 5,
     executions_per_trial: Annotated[int, typer.Argument()] = 3,
@@ -121,8 +121,8 @@ def hyperparameter_tuning(
         executions_per_trial=executions_per_trial
     )
     print_log(f"Hyperparameter tuning done...")
-    pipeline.save_model(pipeline.best_model, f"{base_models_path}/{save_model_path}")
-    print_log(f'Model saved at "{base_models_path}/{save_model_path}"')
+    pipeline.save_model(pipeline.best_model, f"{base_models_path}/{model_name}")
+    print_log(f'Model saved at "{base_models_path}/{model_name}"')
 
 @app.command()
 def predict_random_sample(
