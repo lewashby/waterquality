@@ -31,7 +31,7 @@ def pipeline(
     save_model_path: Annotated[str, typer.Argument()] = "model.keras"
     ):
     """
-    Load data files, clean and merge data soruces, and finally create a model
+    Load data files, clean and merge data sources, and finally create a model
     """
     pipeline = Pipeline(sensor_data_file, weather_data_file)
     pipeline.load_files()
@@ -132,7 +132,7 @@ def predict_random_sample(
     save_plot_path: Annotated[Optional[str], typer.Argument()] = None,
     ):
     """
-    Load data files, clean and merge data soruces, load model and finally make a prediction
+    Load data files, clean and merge data sources, load model and finally make a prediction
     """
     pipeline = Pipeline(sensor_data_file, weather_data_file)
     pipeline.load_trained_model(model_path)
