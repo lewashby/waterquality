@@ -19,3 +19,8 @@ poetry run waterquality
 ```
 
 You will get the commands help and how to use.
+
+### Default data sources
+
+Sensors data: waterquality/data/Fitterizzi_output.csv \
+Weather data: waterquality/data/Meteo Agosto 22 - Luglio 23.xlsx
