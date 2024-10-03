@@ -8,7 +8,7 @@ from typing_extensions import Annotated
 from .Pipeline import Pipeline
 
 app = typer.Typer(no_args_is_help=True)
-base_models_path = "waterquality/models"
+base_models_path = "models"
 
 def print_log(msg: str):
     text = typer.style(msg, fg=typer.colors.RED, bold=True)
