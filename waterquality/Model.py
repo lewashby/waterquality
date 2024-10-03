@@ -8,8 +8,8 @@ class Model:
         if path is None:
             model = Sequential()
             model.add(Input(shape=(input_shape[0], input_shape[1])))
-            model.add(LSTM(128, return_sequences=True, dropout=0.2))
-            model.add(LSTM(64, return_sequences=True, dropout=0.2))
+            model.add(LSTM(128, return_sequences=True))
+            model.add(LSTM(64, return_sequences=True))
             model.add(LSTM(32))
             model.add(Dense(10))
             model.add(Dense(output))
