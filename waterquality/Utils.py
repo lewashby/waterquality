@@ -55,7 +55,7 @@ def plot_single_prediction(yhat, history=None, y=None, save_path=None):
     if history is not None:
         timesteps_in = history.shape[0]
         plt.plot(range(timesteps_in), history, color='blue', label='past values')
-    plt.plot(timesteps_in+1, yhat, label='expected value', markersize=10, marker=".", color="red")
+    plt.plot(timesteps_in+1, yhat, label='prediction', markersize=10, marker=".", color="red")
     if y is not None:
         plt.plot(timesteps_in+1, y, label='real value', markersize=10, marker=".", color="green", alpha=0.5)
     plt.legend()
