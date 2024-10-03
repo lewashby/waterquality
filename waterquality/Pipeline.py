@@ -5,6 +5,7 @@ import random
 import matplotlib.pyplot as plt
 import keras_tuner as kt
 from sklearn.metrics import mean_squared_error
+from tensorflow.keras import callbacks
 
 from .DataHandler import Reader, DataPreparation
 from .Model import Model
@@ -205,12 +206,14 @@ class Pipeline:
         return random_sample, random_sample_real_output
 
 
-    def hyperparameter_tuning(self, epochs=20, batch_size=72, max_trials=5, executions_per_trial=3):            
+    def hyperparameter_tuning(self, epochs=20, batch_size=72, max_trials=5, executions_per_trial=3, overwrite=False):
+        callback = callbacks.EarlyStopping(monitor='val_loss', patience=3)
         tuner = kt.RandomSearch(
             hypermodel = RNNHyperModel((self.train_X.shape[1], self.train_X.shape[2]), self.train_y.shape[1]),
-            objective='mse',
+            objective='val_mse',
             max_trials=max_trials,
-            executions_per_trial=executions_per_trial
+            executions_per_trial=executions_per_trial,
+            overwrite=overwrite
         )
         tuner.search(
             x=self.train_X,
@@ -218,6 +221,7 @@ class Pipeline:
             epochs=epochs,
             batch_size=batch_size,
             validation_data=(self.validation_X, self.validation_y),
+            callbacks=[callback],
         )
         models = tuner.get_best_models(num_models=1)
         best_model = models[0]
