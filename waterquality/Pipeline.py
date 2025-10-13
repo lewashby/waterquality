@@ -4,7 +4,7 @@ import math
 import random
 import matplotlib.pyplot as plt
 import keras_tuner as kt
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 from tensorflow.keras import callbacks
 
 from .DataHandler import Reader, DataPreparation
@@ -30,8 +30,14 @@ class Pipeline:
         weather_data.rename(columns={"Data - ora": "DateTime"}, inplace=True)
         self.weather_data = weather_data
 
-    def slice_data(self):
-        self.sensor_data = self.sensor_data[self.sensor_data['DateTime'] > '2022-07-01 00:00:00']
+    def slice_data(self, start_date="2022-07-01 00:00:00", end_date="2024-07-01 00:00:00"):
+        #start_date => '2022-07-01 00:00:00'
+        if start_date:
+            self.sensor_data = self.sensor_data[self.sensor_data['DateTime'] > start_date]
+            self.weather_data = self.weather_data[self.weather_data['DateTime'] > start_date]
+        if end_date:
+            self.sensor_data = self.sensor_data[self.sensor_data['DateTime'] < end_date]
+            self.weather_data = self.weather_data[self.weather_data['DateTime'] < end_date]
 
     def drop_columns(self):
         # delete unnecesary columns
@@ -42,15 +48,14 @@ class Pipeline:
         sensors_too_many_missing_values = ["NH3 mg/L", "ODO % sat", "ODO % local", "ODO mg/L"]
         
         # if used the following line, check handle_missing_values funtion for ORP mV and pH columns
-        sensors_unused = ['Cond µS/cm', 'nLF Cond µS/cm', 
-                          'ORP mV', 'Battery V', 'Cable Pwr V', 
-                          'Wiper Position volt', 'Sal psu', 'SpCond µS/cm', 
-                          'TDS mg/L', 'pH', 'Turbidity FNU']
+        sensors_unused = ['nLF Cond µS/cm', 'Battery V', 'Cable Pwr V', 
+                          'Wiper Position volt', 'SpCond µS/cm', 
+                          'TSS mg/L']
         
         columns_to_delete = sensors_unnecesary_parameters + sensors_wrong_measures + sensors_duplicated_measures + sensors_too_many_missing_values + sensors_unused
         self.sensor_data.drop(labels=columns_to_delete, axis=1, inplace=True)
 
-        weather_columns_to_delete = ["Data", "Ora"]
+        weather_columns_to_delete = ["Data", "Ora", "Temperatura (°C)"]
         self.weather_data.drop(labels=weather_columns_to_delete, axis=1, inplace=True)
 
     def handle_missing_values(self):
@@ -70,7 +75,6 @@ class Pipeline:
         for c in weather_data_columns[3:]:
           self.weather_data[c] = self.weather_data[c].fillna(self.weather_data[c].mean())
         
-
     def merge_data_sources(self):
         merged = pd.merge_ordered(self.sensor_data, self.weather_data, fill_method="ffill", on="DateTime")
         self.merged_data = merged
@@ -82,6 +86,10 @@ class Pipeline:
 
         min_date = max(s_start_date, w_start_date)
         self.merged_data = self.merged_data[self.merged_data.index > min_date]
+    
+    def align_time_frequency(self, freq="1h"):
+        self.merged_data = self.merged_data.resample(freq).mean().ffill()
+        return pd.infer_freq(self.merged_data.index)
 
     def add_doc_formula_values(self):
         fDOM_QSU = self.sensor_data["fDOM QSU"]
@@ -100,10 +108,10 @@ class Pipeline:
         
         self.sensor_data["DOC formula"] = DOC_formula
 
-    def create_dataset(self, timesteps_in=24, timesteps_out=1):
+    def create_dataset(self, target="DOC formula", timesteps_in=24, timesteps_out=1):
         train_X, train_y, test_X, test_y = DataPreparation.create_dataset(
             self.merged_data, 
-            "DOC formula", 
+            target, 
             (len(self.merged_data) // 3) * 2, 
             timesteps_in=timesteps_in,
             timesteps_out=timesteps_out
@@ -145,7 +153,9 @@ class Pipeline:
         real_y = DataPreparation.inverse_transform_y(self.test_y, self.test_X.shape[2])
 
         rmse = math.sqrt(mean_squared_error(real_y, yhat))
+        r2 = r2_score(real_y, yhat)
         print('Test RMSE: %.3f' % rmse)
+        print('Test R^2: %.3f' % r2)
         if plot:
             plot_predictions(real_y, yhat, save_plot_path)
 
@@ -155,15 +165,15 @@ class Pipeline:
     def load_trained_model(self, path):
         self.model = Model(path=path)
 
-    def predict_single_value(self, X, y=None, plot=False, save_plot_path=None):
+    def predict_single_value(self, X, y=None, verbose=0, plot=False, save_plot_path=None):
         #given past values predict next target column value
         #plot if required
         X_values = DataPreparation.transform_x(X)
-        yhat = self.model.predict(X_values)
+        yhat = self.model.predict(X_values, verbose=verbose)
         yhat = DataPreparation.inverse_transform_y(yhat, X_values.shape[1])
         yhat = yhat[0]
 
-        if y is not None:
+        if y is not None and verbose != 0:
             real_Y = y[:,0]
             rmse = math.sqrt(mean_squared_error(real_Y, yhat))
             print('RMSE: %.3f' % rmse)
@@ -174,15 +184,15 @@ class Pipeline:
             plot_single_prediction(yhat, past_Y, real_Y, save_plot_path)
         return yhat
 
-    def predict_sequence_values(self, X, y=None, plot=False, save_plot_path=None):
+    def predict_sequence_values(self, X, y=None, verbose=0, plot=False, save_plot_path=None):
         #given past values predict target column nexts sequence of n values
         #plot if required
         X_values = DataPreparation.transform_x(X)
-        yhat = self.model.predict(X_values)
+        yhat = self.model.predict(X_values, verbose=verbose)
         yhat = DataPreparation.inverse_transform_y(yhat, X_values.shape[1])
         yhat = yhat[0,:]
 
-        if y is not None:
+        if y is not None and verbose != 0:
             real_Y = y[:,0]
             rmse = math.sqrt(mean_squared_error(real_Y, yhat))
             print('RMSE: %.3f' % rmse)
@@ -197,7 +207,7 @@ class Pipeline:
         timesteps_in = self.model.model.input_shape[1]
         timesteps_out = self.model.model.output_shape[1]
 
-        max_value = len(self.merged_data) -timesteps_in + timesteps_out
+        max_value = len(self.merged_data) - timesteps_in - timesteps_out - 1
         min_value = len(self.merged_data)//3*2
         random_index = random.randint(min_value, max_value)
         random_sample = self.merged_data.iloc[random_index:random_index+timesteps_in].values

@@ -78,8 +78,8 @@ def load_evaluate_model(
     pipeline.merge_data_sources()
     pipeline.align_start_date()
     print_log(f"Preprocessing done...")
-    timesteps_in = pipeline.model.input_shape[1]
-    timesteps_out = pipeline.model.output_shape[1]
+    timesteps_in = pipeline.model.model.input_shape[1]
+    timesteps_out = pipeline.model.model.output_shape[1]
     pipeline.create_dataset(timesteps_in=timesteps_in, timesteps_out=timesteps_out)
     print_log(f"Dataset created...")
     print_log(f"Evaluating model...")

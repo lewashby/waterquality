@@ -68,9 +68,11 @@ def plot_prediction_sequence(yhat, history=None, y=None, save_path=None):
     timesteps_out = yhat.shape[0]
     if history is not None:
         plt.plot(range(timesteps_in), history, color='blue', label='past values')
-    plt.plot(range(timesteps_in, timesteps_in+timesteps_out), yhat, color='red', label='predictions')
+    yhat_connected = [history[-1]] + list(yhat)
+    plt.plot(range(timesteps_in-1, timesteps_in+timesteps_out), yhat_connected, color='red', label='predictions')
     if y is not None:
-        plt.plot(range(timesteps_in, timesteps_in+timesteps_out), y, color='orange', label='real future values')
+        y_connected = [history[-1]] + list(y)
+        plt.plot(range(timesteps_in-1, timesteps_in+timesteps_out), y_connected, color='orange', label='real future values')
     plt.legend()
     if save_path is not None: 
         plt.savefig(save_path, bbox_inches='tight')
